@@ -539,7 +539,10 @@ class MinMaxScaler(base.Transformer):
             lo = min_[i].get()
             hi = max_[i].get()
             d = hi - lo
-            result[i] = (xi - lo) / d if d else 0.0
+            if d and math.isfinite(d):
+                result[i] = (xi - lo) / d
+            else:
+                result[i] = 0.0
         return result
 
 
