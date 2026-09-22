@@ -103,6 +103,46 @@ def test_minmax_scaler_transform_unseen_feature(window_size, warm_start):
     assert scaler.transform_one({"x": 7.0, "y": 4.0}) == {"x": 1.5, "y": 0.5}
 
 
+def test_minmax_scaler_unseen_feature_no_window():
+    """Unseen feature without window_size must return 0.0, not NaN."""
+    scaler = preprocessing.MinMaxScaler()
+    scaler.learn_one({"x": 1.0})
+    scaler.learn_one({"x": 5.0})
+    result = scaler.transform_one({"x": 3.0, "y": 2.0})
+    assert result["x"] == 0.5
+    assert result["y"] == 0.0
+    assert not math.isnan(result["y"])
+
+
+def test_minmax_scaler_unseen_feature_with_window():
+    """Unseen feature with window_size must return 0.0, not raise TypeError."""
+    scaler = preprocessing.MinMaxScaler(window_size=3)
+    scaler.learn_one({"x": 1.0})
+    scaler.learn_one({"x": 5.0})
+    result = scaler.transform_one({"x": 3.0, "y": 2.0})
+    assert result["x"] == 0.5
+    assert result["y"] == 0.0
+
+
+def test_minmax_scaler_unseen_feature_before_any_learn():
+    """Transforming before any learn_one must return 0.0 for all features."""
+    scaler = preprocessing.MinMaxScaler()
+    result = scaler.transform_one({"x": 3.0, "y": 2.0})
+    assert result == {"x": 0.0, "y": 0.0}
+
+    scaler_window = preprocessing.MinMaxScaler(window_size=3)
+    result_window = scaler_window.transform_one({"x": 3.0, "y": 2.0})
+    assert result_window == {"x": 0.0, "y": 0.0}
+
+
+def test_minmax_scaler_unseen_feature_zero_range():
+    """When min and max are equal, d is 0 and the result must be 0.0."""
+    scaler = preprocessing.MinMaxScaler()
+    scaler.learn_one({"x": 5.0})
+    result = scaler.transform_one({"x": 10.0})
+    assert result["x"] == 0.0
+
+
 def test_minmax_scaler_warm_start():
     """`_from_state` seeds min/max so the very first transform uses them."""
     scaler = preprocessing.MinMaxScaler._from_state(min={"x": 8.0}, max={"x": 12.0})
